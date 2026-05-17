@@ -62,10 +62,17 @@ def extract_daily_metrics(df, target_tenor,
                 iv_c   = ivc1 if not np.isnan(ivc1) else ivc2
             else:
                 atm_iv = _interp_var(atm1, atm2, T1, T2, target_tenor)
-                iv_p   = _interp_var(ivp1, ivp2, T1, T2, target_tenor) \
-                         if not (np.isnan(ivp1) or np.isnan(ivp2)) else np.nan
-                iv_c   = _interp_var(ivc1, ivc2, T1, T2, target_tenor) \
-                         if not (np.isnan(ivc1) or np.isnan(ivc2)) else np.nan
+
+                # Wings: interpolate if both available, fallback to single expiry otherwise
+                if not (np.isnan(ivp1) or np.isnan(ivp2)):
+                    iv_p = _interp_var(ivp1, ivp2, T1, T2, target_tenor)
+                else:
+                    iv_p = ivp1 if not np.isnan(ivp1) else ivp2
+
+                if not (np.isnan(ivc1) or np.isnan(ivc2)):
+                    iv_c = _interp_var(ivc1, ivc2, T1, T2, target_tenor)
+                else:
+                    iv_c = ivc1 if not np.isnan(ivc1) else ivc2
 
         rows.append({
             'date'        : date,
