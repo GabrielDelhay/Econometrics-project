@@ -35,16 +35,21 @@ def implied_vol(mkt_price, S, K, T, r, opt_type='C'):
         return np.nan
     
 
-def compute_iv_surface(df, risk_free_rate):
-    """Vectorised IV computation with progress reporting."""
+def compute_iv_surface(df):
+    """
+    Vectorised IV computation with progress reporting.
+    Uses per-option implied rate from df['r'] (extracted via put-call parity
+    regression in load_and_clean) instead of a fixed risk-free rate.
+    """
     # Pre-filter to a sensible moneyness range (speeds up & improves quality)
     df = df[(df['log_m'] > -0.6) & (df['log_m'] < 0.4)].copy()
+    df = df.dropna(subset=['r']).copy()
     print(f"Computing IV for {len(df):,} options...")
 
     ivs = np.full(len(df), np.nan)
     for i, (_, row) in enumerate(df.iterrows()):
         ivs[i] = implied_vol(row['mid'], row['spot'], row['strike'],
-                             row['T'], risk_free_rate, row['type'])
+                             row['T'], row['r'], row['type'])
         if (i + 1) % 10_000 == 0:
             pct = (i + 1) / len(df) * 100
             valid = np.sum(~np.isnan(ivs[:i+1]))
