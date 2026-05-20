@@ -5,7 +5,9 @@ def _slice_metrics(t_df, wing_lo, wing_hi_p, wing_lo_c, wing_hi):
     """ATM IV, put-wing IV, call-wing IV for a single expiry slice."""
     if len(t_df) < 3:
         return np.nan, np.nan, np.nan
-    atm_iv = t_df.loc[t_df['log_m'].abs().idxmin(), 'iv']
+    
+    min_abs_logm = t_df['log_m'].abs().min()
+    atm_iv = t_df[t_df['log_m'].abs() == min_abs_logm]['iv'].mean()
     p_wing = t_df[(t_df['log_m'] > wing_lo)  & (t_df['log_m'] < wing_hi_p) & (t_df['type']=='P')]
     c_wing = t_df[(t_df['log_m'] > wing_lo_c) & (t_df['log_m'] < wing_hi)  & (t_df['type']=='C')]
     iv_p   = p_wing['iv'].mean() if len(p_wing) > 0 else np.nan
