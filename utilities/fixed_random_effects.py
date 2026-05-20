@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-from statsmodels.api import OLS as ols
+import statsmodels.api as sm
 
 
 def within_estimator(panel, y_col, x_cols, entity_col):
-    p = panel[[entity_col, y_col] + x_cols].copy()
+    p = panel[[entity_col, y_col] + x_cols].dropna().copy()
  
     # ── Within (entity-demeaning) transformation ──────────────────────────────
     group_means = p.groupby(entity_col)[[y_col] + x_cols].transform('mean')
@@ -32,11 +32,11 @@ def build_surface_panel(df, reg, wing_lo, wing_hi_p, wing_lo_c, wing_hi):
         atm_iv = g[g['log_m'].abs() < 0.03]['iv'].mean()
         p_wing = g[(g['log_m'] > wing_lo)  & (g['log_m'] < wing_hi_p) & (g['type']=='P')]['iv'].mean()
         c_wing = g[(g['log_m'] > wing_lo_c) & (g['log_m'] < wing_hi)  & (g['type']=='C')]['iv'].mean()
-        conv   = (p_wing + c_wing)/2 - atm_iv if not (np.isnan(p_wing) or np.isnan(c_wing)) else np.nan
+        skew   = (p_wing + c_wing)/2 - atm_iv if not (np.isnan(p_wing) or np.isnan(c_wing)) else np.nan
         if np.isnan(atm_iv):
             continue
         rows.append({'date': date, 'expiry': exp,
-                     'T_days': T_days, 'atm_iv': atm_iv, 'convexity': conv})
+                     'T_days': T_days, 'atm_iv': atm_iv, 'skew': skew})
 
     panel = (pd.DataFrame(rows)
                .merge(reg[['rv_forward']].reset_index(), on='date', how='left')
